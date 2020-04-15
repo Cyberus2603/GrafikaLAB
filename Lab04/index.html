@@ -1,0 +1,617 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <script type="text/javascript">
+        let gl;
+        let shaderProgram;
+        let uPMatrix;
+        let vertexPositionBuffer;
+        let vertexColorBuffer;
+
+        //Funkcje, klasy i definicje labiryntu
+        class Sides {
+            constructor(up = 1, right = 1, down = 1, left = 1, top = 1, bot = 1) {
+                if (up) {
+                    this.wall_up = [
+                        +0.5, +0.5, -0.5,  +0.5, -0.5, -0.5,  -0.5, -0.5, -0.5,
+                        +0.5, +0.5, -0.5,  -0.5, -0.5, -0.5,  -0.5, +0.5, -0.5 ];
+                    this.wall_up_colors = [
+                        0.0, 1.0, 0.0,  0.0, 1.0, 0.0,  0.0, 1.0, 0.0,
+                        0.0, 1.0, 0.0,  0.0, 1.0, 0.0,  0.0, 1.0, 0.0
+                    ];
+                }
+                else {
+                    this.wall_up = [];
+                    this.wall_up_colors = [];
+                }
+
+                if (right) {
+                    this.wall_right = [
+                        +0.5, +0.5, +0.5,  +0.5, -0.5, +0.5,  +0.5, -0.5, -0.5,
+                        +0.5, +0.5, +0.5,  +0.5, -0.5, -0.5,  +0.5, +0.5, -0.5 ];
+                    this.wall_right_colors = [
+                        0.0, 1.0, 0.0,  0.0, 1.0, 0.0,  0.0, 1.0, 0.0,
+                        0.0, 1.0, 0.0,  0.0, 1.0, 0.0,  0.0, 1.0, 0.0
+                    ];
+                }
+                else  {
+                    this.wall_right = [];
+                    this.wall_right_colors = [];
+                }
+
+                if (down) {
+                    this.wall_down = [
+                        +0.5, -0.5, +0.5,  +0.5, +0.5, +0.5,  -0.5, -0.5, +0.5,
+                        -0.5, +0.5, +0.5,  -0.5, -0.5, +0.5,  +0.5, +0.5, +0.5 ];
+                    this.wall_down_colors = [
+                        0.0, 1.0, 0.0,  0.0, 1.0, 0.0,  0.0, 1.0, 0.0,
+                        0.0, 1.0, 0.0,  0.0, 1.0, 0.0,  0.0, 1.0, 0.0
+                    ];
+                }
+                else {
+                    this.wall_down = [];
+                    this.wall_down_colors = [];
+                }
+
+                if (left) {
+                    this.wall_left = [
+                        -0.5, -0.5, +0.5,  -0.5, +0.5, +0.5,  -0.5, -0.5, -0.5,
+                        -0.5, -0.5, -0.5,  -0.5, +0.5, +0.5,  -0.5, +0.5, -0.5 ];
+                    this.wall_left_colors = [
+                        0.0, 1.0, 0.0,  0.0, 1.0, 0.0,  0.0, 1.0, 0.0,
+                        0.0, 1.0, 0.0,  0.0, 1.0, 0.0,  0.0, 1.0, 0.0
+                    ];
+                }
+                else {
+                    this.wall_left = [];
+                    this.wall_left_colors = [];
+                }
+
+                if (top) {
+                    this.wall_top = [
+                        -0.5, +0.5, -0.5,  -0.5, +0.5, +0.5,  +0.5, +0.5, +0.5,
+                        -0.5, +0.5, -0.5,  +0.5, +0.5, +0.5,  +0.5, +0.5, -0.5 ];
+                    this.wall_top_colors = [
+                        1, 1, 1,   1, 1, 1,   1, 1, 1,
+                        1, 1, 1,   1, 1, 1,   1, 1, 1
+                    ];
+                }
+                else {
+                    this.wall_top = [];
+                    this.wall_top_colors = [];
+                }
+
+                if (bot) {
+                    this.wall_bot = [
+                        -0.5, -0.5, +0.5,  -0.5, -0.5, -0.5,  +0.5, -0.5, +0.5,
+                        +0.5, -0.5, +0.5,  -0.5, -0.5, -0.5,  +0.5, -0.5, -0.5 ];
+                    this.wall_bot_colors = [
+                        0, 0, 0,   0, 0, 0,   0, 0, 0,
+                        0, 0, 0,   0, 0, 0,   0, 0, 0,
+                    ];
+                }
+                else {
+                    this.wall_bot = [];
+                    this.wall_bot_colors = [];
+                }
+            }
+            wall_vertecies(posX,posY,posZ) {
+                for (let x = 0; x < 18; x += 3) {
+                    if (this.wall_up.length)
+                        this.wall_up[x] += posX;
+                    if (this.wall_right.length)
+                        this.wall_right[x] += posX;
+                    if (this.wall_down.length)
+                        this.wall_down[x] += posX;
+                    if (this.wall_left.length)
+                        this.wall_left[x] += posX;
+                    if (this.wall_top.length)
+                        this.wall_top[x] += posX;
+                    if (this.wall_bot.length)
+                        this.wall_bot[x] += posX;
+                }
+                for (let y = 1; y < 18; y += 3) {
+                    if (this.wall_up.length)
+                        this.wall_up[y] += posY;
+                    if (this.wall_right.length)
+                        this.wall_right[y] += posY;
+                    if (this.wall_down.length)
+                        this.wall_down[y] += posY;
+                    if (this.wall_left.length)
+                        this.wall_left[y] += posY;
+                    if (this.wall_top.length)
+                        this.wall_top[y] += posY;
+                    if (this.wall_bot.length)
+                        this.wall_bot[y] += posY;
+                }
+                for (let z = 2; z < 18; z += 3) {
+                    if (this.wall_up.length)
+                        this.wall_up[z] += posZ;
+                    if (this.wall_right.length)
+                        this.wall_right[z] += posZ;
+                    if (this.wall_down.length)
+                        this.wall_down[z] += posZ;
+                    if (this.wall_left.length)
+                        this.wall_left[z] += posZ;
+                    if (this.wall_top.length)
+                        this.wall_top[z] += posZ;
+                    if (this.wall_bot.length)
+                        this.wall_bot[z] += posZ;
+                }
+
+            }
+        }
+
+        class Cube {
+            constructor(positionX,positionZ,positionY,walls) {
+                this.positionX = positionX;
+                this.positionY = positionY;
+                this.positionZ = positionZ;
+                this.walls = walls;
+            }
+            cube_vertecies(){
+                this.walls.wall_vertecies(this.positionX,this.positionY,this.positionZ);
+                let vertecies = [];
+                for (let u = 0; u < this.walls.wall_up.length; u++)
+                    vertecies.push(this.walls.wall_up[u]);
+                for (let r = 0; r < this.walls.wall_right.length; r++)
+                    vertecies.push(this.walls.wall_right[r]);
+                for (let d = 0; d < this.walls.wall_down.length; d++)
+                    vertecies.push(this.walls.wall_down[d]);
+                for (let l = 0; l < this.walls.wall_left.length; l++)
+                    vertecies.push(this.walls.wall_left[l]);
+                for (let t = 0; t < this.walls.wall_top.length; t++)
+                    vertecies.push(this.walls.wall_top[t]);
+                for (let b = 0; b < this.walls.wall_bot.length; b++)
+                    vertecies.push(this.walls.wall_bot[b]);
+                return vertecies;
+            }
+            cube_colors(){
+                let colors = [];
+                for (let u = 0; u < this.walls.wall_up_colors.length; u++)
+                    colors.push(this.walls.wall_up_colors[u]);
+                for (let r = 0; r < this.walls.wall_right_colors.length; r++)
+                    colors.push(this.walls.wall_right_colors[r]);
+                for (let d = 0; d < this.walls.wall_down_colors.length; d++)
+                    colors.push(this.walls.wall_down_colors[d]);
+                for (let l = 0; l < this.walls.wall_left_colors.length; l++)
+                    colors.push(this.walls.wall_left_colors[l]);
+                for (let t = 0; t < this.walls.wall_top_colors.length; t++)
+                    colors.push(this.walls.wall_top_colors[t]);
+                for (let b = 0; b < this.walls.wall_bot_colors.length; b++)
+                    colors.push(this.walls.wall_bot_colors[b]);
+
+                //Do przyciemniania kolorów wraz z wzrostem odległości (not implemented)
+                // colors.push(this.walls.wall_up_colors);
+                // colors.push(this.walls.wall_right_colors);
+                // colors.push(this.walls.wall_down_colors);
+                // colors.push(this.walls.wall_left_colors);
+                // colors.push(this.walls.wall_top_colors);
+                // colors.push(this.walls.wall_bot_colors);
+
+                return colors;
+            }
+        }
+
+        //Koniec Funkcji, klas i definicji labiryntu
+        function MatrixMul(a,b) { //Mnożenie macierzy
+            c = [
+                0,0,0,0,
+                0,0,0,0,
+                0,0,0,0,
+                0,0,0,0
+            ]
+            for(let i=0;i<4;i++) {
+                for(let j=0;j<4;j++) {
+                    c[i*4+j] = 0.0;
+                    for(let k=0;k<4;k++) {
+                        c[i*4+j]+= a[i*4+k] * b[k*4+j];
+                    }
+                }
+            }
+            return c;
+        }
+
+        function startGL() {
+            let canvas = document.getElementById("canvas3D"); //wyszukanie obiektu w strukturze strony
+            gl = canvas.getContext("experimental-webgl"); //pobranie kontekstu OpenGL'u z obiektu canvas
+            gl.viewportWidth = canvas.width; //przypisanie wybranej przez nas rozdzielczości do systemu OpenGL
+            gl.viewportHeight = canvas.height;
+
+            //Kod shaderów
+            const vertextShaderSource = ` //Znak akcentu z przycisku tyldy - na lewo od przycisku 1 na klawiaturze
+    precision highp float;
+    attribute vec3 aVertexPosition;
+    attribute vec3 aVertexColor;
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+    varying vec3 vColor;
+    void main(void) {
+      gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0); //Dokonanie transformacji położenia punktów z przestrzeni 3D do przestrzeni obrazu (2D)
+      vColor = aVertexColor;
+    }
+  `;
+            const fragmentShaderSource = `
+    precision highp float;
+    varying vec3 vColor;
+    void main(void) {
+      gl_FragColor = vec4(vColor,1.0); //Ustalenie stałego koloru wszystkich punktów sceny
+    }
+  `;
+
+            let fragmentShader = gl.createShader(gl.FRAGMENT_SHADER); //Stworzenie obiektu shadera
+            let vertexShader   = gl.createShader(gl.VERTEX_SHADER);
+            gl.shaderSource(fragmentShader, fragmentShaderSource); //Podpięcie źródła kodu shader
+            gl.shaderSource(vertexShader, vertextShaderSource);
+            gl.compileShader(fragmentShader); //Kompilacja kodu shader
+            gl.compileShader(vertexShader);
+            if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) { //Sprawdzenie ewentualnych błedów kompilacji
+                alert(gl.getShaderInfoLog(fragmentShader));
+                return null;
+            }
+            if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+                alert(gl.getShaderInfoLog(vertexShader));
+                return null;
+            }
+
+            shaderProgram = gl.createProgram(); //Stworzenie obiektu programu
+            gl.attachShader(shaderProgram, vertexShader); //Podpięcie obu shaderów do naszego programu wykonywanego na karcie graficznej
+            gl.attachShader(shaderProgram, fragmentShader);
+            gl.linkProgram(shaderProgram);
+            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) alert("Could not initialise shaders");  //Sprawdzenie ewentualnych błedów
+
+            //Opis sceny 3D, położenie punktów w przestrzeni 3D w formacie X,Y,Z
+            // let vertexPosition = [
+            //     //Top
+            //     -1.0, +1.0, -1.0,  -1.0, +1.0, +1.0,  +1.0, +1.0, +1.0, //3 punkty po 3 składowe - X1,Y1,Z1, X2,Y2,Z2, X3,Y3,Z3 - 1 trójkąt
+            //     -1.0, +1.0, -1.0,  +1.0, +1.0, +1.0,  +1.0, +1.0, -1.0,
+            //     //Left
+            //     -1.0, -1.0, +1.0,  -1.0, +1.0, +1.0,  -1.0, -1.0, -1.0,
+            //     -1.0, -1.0, -1.0,  -1.0, +1.0, +1.0,  -1.0, +1.0, -1.0,
+            //     //Right
+            //     +1.0, +1.0, +1.0,  +1.0, -1.0, +1.0,  +1.0, -1.0, -1.0,
+            //     +1.0, +1.0, +1.0,  +1.0, -1.0, -1.0,  +1.0, +1.0, -1.0,
+            //     //Front
+            //     +1.0, -1.0, +1.0,  +1.0, +1.0, +1.0,  -1.0, -1.0, +1.0,
+            //     -1.0, +1.0, +1.0,  -1.0, -1.0, +1.0,  +1.0, +1.0, +1.0,
+            //     //Back
+            //     +1.0, +1.0, -1.0,  +1.0, -1.0, -1.0,  -1.0, -1.0, -1.0,
+            //     +1.0, +1.0, -1.0,  -1.0, -1.0, -1.0,  -1.0, +1.0, -1.0,
+            //     //Bottom
+            //     -1.0, -1.0, +1.0,  -1.0, -1.0, -1.0,  +1.0, -1.0, +1.0,
+            //     +1.0, -1.0, +1.0,  -1.0, -1.0, -1.0,  +1.0, -1.0, -1.0
+            // ];
+
+            let sides = [];
+
+            //Labirynt
+            //0-9
+            sides.push(new Sides(1,1,0,1));
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,0,1,1));
+
+            sides.push(new Sides(1,1,0,1));
+            sides.push(new Sides(0,0,0,1));
+            sides.push(new Sides(0,0,0,1));
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,1,1,1));
+            //10-19
+            sides.push(new Sides(1,0,0,1));
+            sides.push(new Sides(0,0,0,1));
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,0,1,1));
+            sides.push(new Sides(1,0,0,0));
+
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,1,1,0));
+            sides.push(new Sides(1,1,0,0));
+            sides.push(new Sides(0,0,1,1));
+            sides.push(new Sides(1,0,1,1));
+            //20-29
+            sides.push(new Sides(1,0,1,0));
+            sides.push(new Sides(1,1,1,0));
+            sides.push(new Sides(1,0,1,1));
+            sides.push(new Sides(1,0,1,0));
+            sides.push(new Sides(1,1,0,0));
+
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,1,1,1));
+            sides.push(new Sides(1,0,1,0));
+            sides.push(new Sides(1,0,1,0));
+            //30-39
+            sides.push(new Sides(1,0,1,0));
+            sides.push(new Sides(1,0,0,1));
+            sides.push(new Sides(0,1,1,0));
+            sides.push(new Sides(1,1,0,0));
+            sides.push(new Sides(0,1,0,1));
+
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,0,1,1));
+            sides.push(new Sides(1,0,0,1));
+            sides.push(new Sides(0,1,0,0));
+            sides.push(new Sides(0,1,1,0));
+            //40-49
+            sides.push(new Sides(1,1,1,0));
+            sides.push(new Sides(1,0,0,0));
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,1,0,1));
+
+            sides.push(new Sides(0,0,1,1));
+            sides.push(new Sides(1,1,0,0));
+            sides.push(new Sides(0,1,0,0));
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,0,1,1));
+            //50-59
+            sides.push(new Sides(1,1,0,1));
+            sides.push(new Sides(0,1,0,0));
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,0,1,1));
+
+            sides.push(new Sides(1,1,0,0));
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,0,0,1));
+            sides.push(new Sides(0,0,1,0));
+            //60-69
+            sides.push(new Sides(1,1,0,1));
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,0,0,1));
+            sides.push(new Sides(0,0,1,1));
+            sides.push(new Sides(1,0,1,0));
+
+            sides.push(new Sides(1,0,1,1));
+            sides.push(new Sides(1,1,0,1));
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,0,1,0));
+            sides.push(new Sides(1,0,1,0));
+            //70-79
+            sides.push(new Sides(1,0,0,1));
+            sides.push(new Sides(0,0,1,1));
+            sides.push(new Sides(1,0,1,0));
+            sides.push(new Sides(1,0,1,0));
+            sides.push(new Sides(1,0,1,0));
+
+            sides.push(new Sides(1,1,0,0));
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,0,1,0));
+            sides.push(new Sides(1,0,1,0));
+            //80-89
+            sides.push(new Sides(1,0,1,0));
+            sides.push(new Sides(1,0,1,0));
+            sides.push(new Sides(1,0,1,0));
+            sides.push(new Sides(1,1,0,0));
+            sides.push(new Sides(0,1,0,0));
+
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,0,0,1));
+            sides.push(new Sides(0,1,1,1));
+            sides.push(new Sides(1,1,1,0));
+            sides.push(new Sides(1,0,1,0));
+            //90-99
+            sides.push(new Sides(1,1,1,0));
+            sides.push(new Sides(1,1,0,0));
+            sides.push(new Sides(0,1,1,0));
+            sides.push(new Sides(1,1,0,1));
+            sides.push(new Sides(0,1,0,1));
+
+            sides.push(new Sides(0,1,0,1));
+            sides.push(new Sides(0,1,0,0));
+            sides.push(new Sides(0,1,1,1));
+            sides.push(new Sides(1,1,0,1));
+            sides.push(new Sides(0,1,1,0));
+
+            let cubes = [];
+
+            let cubeCount = 100;
+
+            for (let xPos = 0; xPos <10; xPos++) {
+                for (let zPos = 0; zPos <10; zPos++){
+                    cubes.push(new Cube(xPos,zPos,0,sides[(10*xPos + zPos)]));
+                }
+            }
+
+            let vertexPosition = [];
+
+            for (let i = 0; i < cubeCount; i++){
+                let tmp = cubes[i].cube_vertecies();
+                for (let j = 0; j < tmp.length; j++)
+                    vertexPosition.push(tmp[j]);
+            }
+
+            vertexPositionBuffer = gl.createBuffer(); //Stworzenie tablicy w pamieci karty graficznej
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexPosition), gl.STATIC_DRAW);
+            vertexPositionBuffer.itemSize = 3; //zdefiniowanie liczby współrzednych per wierzchołek
+            vertexPositionBuffer.numItems = vertexPosition.length / (vertexPositionBuffer.itemSize * 3); //Zdefiniowanie liczby punktów w naszym buforze
+
+            //Opis sceny 3D, kolor każdego z wierzchołków
+            // let vertexColor = [
+            //     //Top
+            //     1.0, 0.0, 0.0,  1.0, 0.0, 0.0,  1.0, 0.0, 0.0, //3 punkty po 3 składowe - R1,G1,B1, R2,G2,B2, R3,G3,B3 - 1 trójkąt
+            //     1.0, 0.0, 0.0,  1.0, 0.0, 0.0,  1.0, 0.0, 0.0,
+            //     //Left
+            //     0.0, 1.0, 0.0,  0.0, 1.0, 0.0,  0.0, 1.0, 0.0,
+            //     0.0, 1.0, 0.0,  0.0, 1.0, 0.0,  0.0, 1.0, 0.0,
+            //     //Right
+            //     0.0, 0.0, 1.0,  0.0, 0.0, 1.0,  0.0, 0.0, 1.0,
+            //     0.0, 0.0, 1.0,  0.0, 0.0, 1.0,  0.0, 0.0, 1.0,
+            //     //Front
+            //     1.0, 1.0, 0.0,  1.0, 1.0, 0.0,  1.0, 1.0, 0.0,
+            //     1.0, 1.0, 0.0,  1.0, 1.0, 0.0,  1.0, 1.0, 0.0,
+            //     //Back
+            //     1.0, 0.0, 1.0,  1.0, 0.0, 1.0,  1.0, 0.0, 1.0,
+            //     1.0, 0.0, 1.0,  1.0, 0.0, 1.0,  1.0, 0.0, 1.0,
+            //     //Bottom
+            //     0.0, 1.0, 1.0,  0.0, 1.0, 1.0,  0.0, 1.0, 1.0,
+            //     0.0, 1.0, 1.0,  0.0, 1.0, 1.0,  0.0, 1.0, 1.0,
+            // ];
+            let vertexColor = [];
+
+            for (let i = 0; i < cubeCount; i++){
+                let tmp = cubes[i].cube_colors();
+                for (let j = 0; j < tmp.length; j++){
+                        vertexColor.push(tmp[j]);
+                }
+            }
+
+            vertexColorBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexColorBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexColor), gl.STATIC_DRAW);
+            vertexColorBuffer.itemSize = 3;
+            vertexColorBuffer.numItems = vertexColor.length / (vertexColorBuffer.itemSize * 3);
+
+            //Macierze opisujące położenie wirtualnej kamery w przestrzenie 3D
+            let aspect = gl.viewportWidth/gl.viewportHeight;
+            let fov = 45.0 * Math.PI / 180.0; //Określenie pola widzenia kamery
+            let zFar = 100.0; //Ustalenie zakresów renderowania sceny 3D (od obiektu najbliższego zNear do najdalszego zFar)
+            let zNear = 0.1;
+            uPMatrix = [
+                1.0/(aspect*Math.tan(fov/2)),0                           ,0                         ,0                            ,
+                0                         ,1.0/(Math.tan(fov/2))         ,0                         ,0                            ,
+                0                         ,0                           ,-(zFar+zNear)/(zFar-zNear)  , -1,
+                0                         ,0                           ,-(2*zFar*zNear)/(zFar-zNear) ,0.0,
+            ];
+
+            Tick();
+        }
+        let CameraAngleZ = 0.0;
+        let CameraAngleY = 180.0;
+        let CameraAngleX = 0.0;
+        let TranslateX = 0.0;
+        let TranslateY = 0.0;
+        let TranslateZ = 0.0;
+        let MovementSpeedMultiplier = 0.15;
+        let CameraAngleSpeedMultiplier = 1;
+        let uMVMatrix = [
+            1,0,0,0, //Macierz jednostkowa
+            0,1,0,0,
+            0,0,1,0,
+            0,0,0,1
+        ];
+
+        function CalculateWorldPosition() {
+            let uMVMatrix = [
+                1,0,0,0, //Macierz jednostkowa
+                0,1,0,0,
+                0,0,1,0,
+                0,0,0,1
+            ];
+
+            let uMVRotZ = [
+                +Math.cos(CameraAngleZ*Math.PI/180.0),+Math.sin(CameraAngleZ*Math.PI/180.0),0,0,
+                -Math.sin(CameraAngleZ*Math.PI/180.0),+Math.cos(CameraAngleZ*Math.PI/180.0),0,0,
+                0,0,1,0,
+                0,0,0,1
+            ];
+
+            let uMVRotY = [
+                +Math.cos(CameraAngleY*Math.PI/180.0),0,-Math.sin(CameraAngleY*Math.PI/180.0),0,
+                0,1,0,0,
+                +Math.sin(CameraAngleY*Math.PI/180.0),0,+Math.cos(CameraAngleY*Math.PI/180.0),0,
+                0,0,0,1
+            ];
+
+            let uMVRotX = [
+                1,0,0,0,
+                0,+Math.cos(CameraAngleX*Math.PI/180.0),+Math.sin(CameraAngleX*Math.PI/180.0),0,
+                0,-Math.sin(CameraAngleX*Math.PI/180.0),+Math.cos(CameraAngleX*Math.PI/180.0),0,
+                0,0,0,1
+            ];
+
+            let uMVTranslateX = [
+                1,0,0,0,
+                0,1,0,0,
+                0,0,1,0,
+                TranslateX,0,0,1
+            ];
+
+            let uMVTranslateY = [
+                1,0,0,0,
+                0,1,0,0,
+                0,0,1,0,
+                0,TranslateY,0,1
+            ];
+
+            let uMVTranslateZ = [
+                1,0,0,0,
+                0,1,0,0,
+                0,0,1,0,
+                0,0,TranslateZ,1
+            ];
+
+            uMVMatrix = MatrixMul(uMVMatrix,uMVRotX);
+            uMVMatrix = MatrixMul(uMVMatrix,uMVRotY);
+            uMVMatrix = MatrixMul(uMVMatrix,uMVRotZ);
+            uMVMatrix = MatrixMul(uMVMatrix,uMVTranslateX);
+            uMVMatrix = MatrixMul(uMVMatrix,uMVTranslateY);
+            uMVMatrix = MatrixMul(uMVMatrix,uMVTranslateZ);
+
+            return uMVMatrix;
+        }
+
+        function Tick() {
+
+            let uMVMatrix = CalculateWorldPosition();
+            //alert(uPMatrix);
+
+            //Render Scene
+            gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+            gl.clearColor(0.0,0.0,0.0,1.0); //Wyczyszczenie obrazu kolorem czarnym
+            gl.clearDepth(1.0);             //Wyczyścienie bufora głebi najdalszym planem
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.useProgram(shaderProgram); //Użycie przygotowanego programu shaderowego
+
+            gl.enable(gl.DEPTH_TEST);           // Włączenie testu głębi - obiekty bliższe mają przykrywać obiekty dalsze
+            gl.depthFunc(gl.LEQUAL);            //
+
+            gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, "uPMatrix"), false, new Float32Array(uPMatrix)); //Wgranie macierzy kamery do pamięci karty graficznej
+            gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, "uMVMatrix"), false, new Float32Array(uMVMatrix));
+
+            gl.enableVertexAttribArray(gl.getAttribLocation(shaderProgram, "aVertexPosition"));  //Przekazanie położenia
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
+            gl.vertexAttribPointer(gl.getAttribLocation(shaderProgram, "aVertexPosition"), vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+            gl.enableVertexAttribArray(gl.getAttribLocation(shaderProgram, "aVertexColor"));  //Przekazanie kolorów
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexColorBuffer);
+            gl.vertexAttribPointer(gl.getAttribLocation(shaderProgram, "aVertexColor"), vertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+            gl.drawArrays(gl.TRIANGLES, 0, vertexPositionBuffer.numItems*vertexPositionBuffer.itemSize); //Faktyczne wywołanie rendrowania
+
+            setTimeout(Tick,0);
+        }
+
+        function handlekeydown(event) {
+            if(event.keyCode===87) { //W
+                TranslateZ += MovementSpeedMultiplier;
+            }
+            if(event.keyCode===83) { //S
+                TranslateZ -= MovementSpeedMultiplier;
+            }
+            if(event.keyCode===68) { //D
+                TranslateX -= MovementSpeedMultiplier;
+            }
+            if(event.keyCode===65) { //A
+                TranslateX += MovementSpeedMultiplier;
+            }
+            if(event.keyCode===74) {
+                CameraAngleY=CameraAngleY-CameraAngleSpeedMultiplier;
+            }
+            if(event.keyCode===76) {
+                CameraAngleY=CameraAngleY+CameraAngleSpeedMultiplier;
+            }
+            //alert(event.keyCode);
+            //alert(angleX);
+        }
+
+    </script>
+</head>
+<body onload="startGL()" onkeydown="handlekeydown(event)">
+<canvas id="canvas3D" width="1280" height="800" style="border: solid black 1px"></canvas>
+</body>
+</html>
