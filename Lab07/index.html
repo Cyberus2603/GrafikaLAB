@@ -2,14 +2,39 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <script type="text/javascript" src="sphere.js"></script>
+    <script type="text/javascript" src="texture_vertecies.js"></script>
     <script type="text/javascript">
         let gl;
         let shaderProgram;
         let uPMatrix;
-        let vertexPositionBuffer;
-        let vertexColorBuffer;
-        let vertexCoordsBuffer;
-        let vertexNormalBuffer;
+        let texture_buffers = [];
+
+        let sun = new Sphere(20.0,"Sun.png",sun_texture_vertecies,0,0,0,true);
+        let mercury = new Sphere(0.5,"Mercury.png",mercury_texture_vertecies,1,0,0); //Return x to 45
+        let venus = new Sphere(0.75,"Venus.png",venus_texture_vertecies,-55);
+        let earth = new Sphere(1.0,"Earth.png",earth_texture_vertecies,0,78);
+        let mars = new Sphere(1.0,"Mars.png",mars_texture_vertecies,0,-100);
+        let jupiter = new Sphere(5.0,"Jupiter.png",jupiter_texture_vertecies,140,-150);
+        let saturn = new Sphere(3.0,"Saturn.png",saturn_texture_vertecies,-200,105);
+        let uranus = new Sphere(3.0,"Uranus.png",uranus_texture_vertecies,220,340);
+        let neptune = new Sphere(4.0,"Neptune.png",neptune_texture_vertecies,0,-430);
+        let moon = new Sphere(0.1,"Moon.png",moon_texture_vertecies,0,81);
+        let phobos = new Sphere(0.1,"Phobos.png",phobos_texture_vertecies,3.5,-104);
+        let deimos = new Sphere(0.1,"Deimos.png",deimos_texture_vertecies,0,-97);
+
+        let planets = [];
+        planets.push(sun);
+        planets.push(mercury);
+        planets.push(venus);
+        planets.push(earth);
+        planets.push(mars);
+        planets.push(jupiter);
+        planets.push(saturn);
+        planets.push(uranus);
+        planets.push(neptune);
+        planets.push(moon);
+        planets.push(phobos);
+        planets.push(deimos);
 
         function MatrixMul(a,b) { //Mnożenie macierzy
             c = [
@@ -52,29 +77,6 @@
                 r,g,b, r,g,b, r,g,b,    //Pierwszy trójkąt
                 r,g,b, r,g,b, r,g,b ];  //Drugi trójkąt
             return vertexColor;
-        }
-
-        function createNormal(p1x,p1y,p1z,p2x,p2y,p2z,p3x,p3y,p3z) { //Wyznaczenie wektora normalnego dla trójkąta
-            let v1x = p2x - p1x;
-            let v1y = p2y - p1y;
-            let v1z = p2z - p1z;
-
-            let v2x = p3x - p1x;
-            let v2y = p3y - p1y;
-            let v2z = p3z - p1z;
-
-            let v3x =  v1y*v2z - v1z*v2y;
-            let v3y =  v1z*v2x - v1x*v2z;
-            let v3z =  v1x*v2y - v1y*v2x;
-
-            vl = Math.sqrt(v3x*v3x+v3y*v3y+v3z*v3z); //Obliczenie długości wektora
-
-            v3x/=vl; //Normalizacja na zakreś -1 1
-            v3y/=vl;
-            v3z/=vl;
-
-            let vertexNormal = [v3x,v3y,v3z, v3x,v3y,v3z, v3x,v3y,v3z];
-            return vertexNormal;
         }
 
         function startGL() {
@@ -142,67 +144,23 @@
             gl.linkProgram(shaderProgram);
             if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) alert("Could not initialise shaders");  //Sprawdzenie ewentualnych błedów
 
-            //Opis sceny 3D, położenie punktów w przestrzeni 3D w formacie X,Y,Z
-            let vertexPosition = []; //3 punkty po 3 składowe - X1,Y1,Z1, X2,Y2,Z2, X3,Y3,Z3 - 1 trójkąt
-
-            let sun = new Sphere(4.0,"Tex.png",[])
-
-            vertexPosition = sun.triangleVertecies();
-
-            vertexPositionBuffer = gl.createBuffer(); //Stworzenie tablicy w pamieci karty graficznej
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexPosition), gl.STATIC_DRAW);
-            vertexPositionBuffer.itemSize = 3; //zdefiniowanie liczby współrzednych per wierzchołek
-            vertexPositionBuffer.numItems = vertexPosition.length / (vertexPositionBuffer.itemSize * 3); //Zdefiniowanie liczby punktów w naszym buforze
-
-            //Opis sceny 3D, kolor każdego z wierzchołków
-            let vertexColor = []; //3 punkty po 3 składowe - R1,G1,B1, R2,G2,B2, R3,G3,B3 - 1 trójkąt
-
-            vertexColor = sun.colorVertecies();
-
-            vertexColorBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexColorBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexColor), gl.STATIC_DRAW);
-            vertexColorBuffer.itemSize = 3;
-            vertexColorBuffer.numItems = vertexColor.length / (vertexColorBuffer.itemSize * 3);
-
-            let vertexCoords = []; //3 punkty po 2 składowe - U1,V1, U2,V2, U3,V3 - 1 trójkąt
-
-            vertexCoords = sun.textureVertecies();
-
-
-            vertexCoordsBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexCoordsBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexCoords), gl.STATIC_DRAW);
-            vertexCoordsBuffer.itemSize = 2;
-            vertexCoordsBuffer.numItems = vertexCoords.length/ (vertexCoordsBuffer.itemSize * 3);
-
-            let vertexNormal = [];
-
-            vertexNormal = sun.normalVertecies();
-
-            vertexNormalBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexNormalBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexNormal), gl.STATIC_DRAW);
-            vertexNormalBuffer.itemSize = 3;
-            vertexNormalBuffer.numItems = vertexNormal.length/ (vertexNormalBuffer.itemSize * 3);
-
-
-            textureBuffer = gl.createTexture();
-            var textureImg = new Image();
-            textureImg.onload = function() { //Wykonanie kodu automatycznie po załadowaniu obrazka
-                gl.bindTexture(gl.TEXTURE_2D, textureBuffer);
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureImg); //Faktyczne załadowanie danych obrazu do pamieci karty graficznej
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); //Ustawienie parametrów próbkowania tekstury
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            }
-            textureImg.src="Tex.png"; //Nazwa obrazka
+            texture_buffers.push(sun.TextureFileBuffer());
+            texture_buffers.push(mercury.TextureFileBuffer());
+            texture_buffers.push(venus.TextureFileBuffer());
+            texture_buffers.push(earth.TextureFileBuffer());
+            texture_buffers.push(mars.TextureFileBuffer());
+            texture_buffers.push(jupiter.TextureFileBuffer());
+            texture_buffers.push(saturn.TextureFileBuffer());
+            texture_buffers.push(uranus.TextureFileBuffer());
+            texture_buffers.push(neptune.TextureFileBuffer());
+            texture_buffers.push(moon.TextureFileBuffer());
+            texture_buffers.push(phobos.TextureFileBuffer());
+            texture_buffers.push(deimos.TextureFileBuffer());
 
             //Macierze opisujące położenie wirtualnej kamery w przestrzenie 3D
             let aspect = gl.viewportWidth/gl.viewportHeight;
             let fov = 45.0 * Math.PI / 180.0; //Określenie pola widzenia kamery
-            let zFar = 400.0; //Ustalenie zakresów renderowania sceny 3D (od obiektu najbliższego zNear do najdalszego zFar)
+            let zFar = 1000.0; //Ustalenie zakresów renderowania sceny 3D (od obiektu najbliższego zNear do najdalszego zFar)
             let zNear = 0.1;
             uPMatrix = [
                 1.0/(aspect*Math.tan(fov/2)),0                           ,0                         ,0                            ,
@@ -218,10 +176,12 @@
         let CameraAngleX = 0.0;
         let TranslateX = 0.0;
         let TranslateY = 0.0;
-        let TranslateZ = 0.0;
-        let MovementSpeedMultiplier = 0.15;
+        let TranslateZ = 10.0;
+        let MovementSpeedMultiplier = 1;
+        let CameraAngleSpeedMultiplier = 0.5;
+        let LightSpeedMultiplier = 0.25;
 
-        let lightX = 10;
+        let lightX = 0;
         let lightY = 0;
         let lightZ = 0;
 
@@ -309,31 +269,38 @@
             gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, "uPMatrix"), false, new Float32Array(uPMatrix)); //Wgranie macierzy kamery do pamięci karty graficznej
             gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, "uMVMatrix"), false, new Float32Array(uMVMatrix));
 
-            gl.enableVertexAttribArray(gl.getAttribLocation(shaderProgram, "aVertexPosition"));  //Przekazanie położenia
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
-            gl.vertexAttribPointer(gl.getAttribLocation(shaderProgram, "aVertexPosition"), vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+            for (let i = 0; i < 2; i++) {
+                gl.enableVertexAttribArray(gl.getAttribLocation(shaderProgram, "aVertexPosition"));  //Przekazanie położenia
+                gl.bindBuffer(gl.ARRAY_BUFFER, planets[i].PositionBuffer());
+                gl.vertexAttribPointer(gl.getAttribLocation(shaderProgram, "aVertexPosition"), planets[i].PositionBuffer().itemSize, gl.FLOAT, false, 0, 0);
 
-            gl.enableVertexAttribArray(gl.getAttribLocation(shaderProgram, "aVertexColor"));  //Przekazanie kolorów
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexColorBuffer);
-            gl.vertexAttribPointer(gl.getAttribLocation(shaderProgram, "aVertexColor"), vertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+                gl.enableVertexAttribArray(gl.getAttribLocation(shaderProgram, "aVertexColor"));  //Przekazanie kolorów
+                gl.bindBuffer(gl.ARRAY_BUFFER, planets[i].ColorBuffer());
+                gl.vertexAttribPointer(gl.getAttribLocation(shaderProgram, "aVertexColor"), planets[i].ColorBuffer().itemSize, gl.FLOAT, false, 0, 0);
 
-            gl.enableVertexAttribArray(gl.getAttribLocation(shaderProgram, "aVertexCoords"));  //Pass the geometry
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexCoordsBuffer);
-            gl.vertexAttribPointer(gl.getAttribLocation(shaderProgram, "aVertexCoords"), vertexCoordsBuffer.itemSize, gl.FLOAT, false, 0, 0);
+                gl.enableVertexAttribArray(gl.getAttribLocation(shaderProgram, "aVertexCoords"));  //Pass the geometry
+                gl.bindBuffer(gl.ARRAY_BUFFER, planets[i].TextureBuffer());
+                gl.vertexAttribPointer(gl.getAttribLocation(shaderProgram, "aVertexCoords"), planets[i].TextureBuffer().itemSize, gl.FLOAT, false, 0, 0);
 
-            gl.enableVertexAttribArray(gl.getAttribLocation(shaderProgram, "aVertexNormal"));  //Przekazywanie wektorów normalnych
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexNormalBuffer);
-            gl.vertexAttribPointer(gl.getAttribLocation(shaderProgram, "aVertexNormal"), vertexNormalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+                gl.enableVertexAttribArray(gl.getAttribLocation(shaderProgram, "aVertexNormal"));  //Przekazywanie wektorów normalnych
+                gl.bindBuffer(gl.ARRAY_BUFFER, planets[i].NormalsBuffer());
+                gl.vertexAttribPointer(gl.getAttribLocation(shaderProgram, "aVertexNormal"), planets[i].NormalsBuffer().itemSize, gl.FLOAT, false, 0, 0);
 
-            gl.uniform3f(gl.getUniformLocation(shaderProgram, "uLightPosition"),lightX,lightY,lightZ);
+                gl.uniform3f(gl.getUniformLocation(shaderProgram, "uLightPosition"),lightX,lightY,lightZ);
 
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, textureBuffer);
-            gl.uniform1i(gl.getUniformLocation(shaderProgram, "uSampler"), 0);
+                gl.activeTexture(gl.TEXTURE0);
+                gl.bindTexture(gl.TEXTURE_2D, texture_buffers[i]);
+                gl.uniform1i(gl.getUniformLocation(shaderProgram, "uSampler"), 0);
 
-            gl.drawArrays(gl.TRIANGLES, 0, vertexPositionBuffer.numItems*vertexPositionBuffer.itemSize); //Faktyczne wywołanie rendrowania
+                gl.drawArrays(gl.TRIANGLES, 0, sun.PositionBuffer().numItems*sun.PositionBuffer().itemSize); //Faktyczne wywołanie rendrowania
+            }
 
-            setTimeout(Tick,0);
+
+            console.log("X: " + TranslateX + "\n");
+            console.log("Y: " + TranslateY + "\n");
+            console.log("Z: " + TranslateZ + "\n");
+
+            setTimeout(Tick,10);
         }
         function handlekeydown(event) {
             if(event.keyCode===87) { //W
@@ -354,18 +321,30 @@
                 TranslateZ += MovementSpeedMultiplier*Math.sin(CameraAngleY*Math.PI/180.0);
                 TranslateX += MovementSpeedMultiplier*Math.cos(CameraAngleY*Math.PI/180.0);
             }
+            //Numepad Keyboard
+            if(event.keyCode===104) { //8
+                CameraAngleX=CameraAngleX+CameraAngleSpeedMultiplier;
+            }
+            if(event.keyCode===100) { //4
+                CameraAngleY=CameraAngleY-CameraAngleSpeedMultiplier;
+            }
+            if(event.keyCode===102) { //6
+                CameraAngleY=CameraAngleY+CameraAngleSpeedMultiplier;
+            }
+            if(event.keyCode===98) { //2
+                CameraAngleX=CameraAngleX-CameraAngleSpeedMultiplier;
+            }
             //U I O J K L
-            if(event.keyCode==76) lightX=lightX+0.1;
-            if(event.keyCode==74) lightX=lightX-0.1;
-            if(event.keyCode==73) lightY=lightY+0.1;
-            if(event.keyCode==75) lightY=lightY-0.1;
-            if(event.keyCode==85) lightZ=lightZ+0.1;
-            if(event.keyCode==79) lightZ=lightZ-0.1;
+            if(event.keyCode==76) lightX += LightSpeedMultiplier;
+            if(event.keyCode==74) lightX -= LightSpeedMultiplier;
+            if(event.keyCode==73) lightY += LightSpeedMultiplier;
+            if(event.keyCode==75) lightY -= LightSpeedMultiplier;
+            if(event.keyCode==85) lightZ += LightSpeedMultiplier;
+            if(event.keyCode==79) lightZ -= LightSpeedMultiplier;
         }
     </script>
 </head>
 <body onload="startGL()" onkeydown="handlekeydown(event)">
 <canvas id="canvas3D" width="1280" height="800" style="border: solid black 1px"></canvas>
-<img id="textureImg" src="Tex.png">
 </body>
 </html>
