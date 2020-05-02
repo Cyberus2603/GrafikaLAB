@@ -10,7 +10,7 @@
         let texture_buffers = [];
 
         let sun = new Sphere(20.0,"Sun.png",sun_texture_vertecies,0,0,0,true);
-        let mercury = new Sphere(0.5,"Mercury.png",mercury_texture_vertecies,1,0,0); //Return x to 45
+        let mercury = new Sphere(0.5,"Mercury.png",mercury_texture_vertecies,45);
         let venus = new Sphere(0.75,"Venus.png",venus_texture_vertecies,-55);
         let earth = new Sphere(1.0,"Earth.png",earth_texture_vertecies,0,78);
         let mars = new Sphere(1.0,"Mars.png",mars_texture_vertecies,0,-100);
@@ -176,7 +176,7 @@
         let CameraAngleX = 0.0;
         let TranslateX = 0.0;
         let TranslateY = 0.0;
-        let TranslateZ = 10.0;
+        let TranslateZ = 40.0;
         let MovementSpeedMultiplier = 1;
         let CameraAngleSpeedMultiplier = 0.5;
         let LightSpeedMultiplier = 0.25;
@@ -269,7 +269,7 @@
             gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, "uPMatrix"), false, new Float32Array(uPMatrix)); //Wgranie macierzy kamery do pamięci karty graficznej
             gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, "uMVMatrix"), false, new Float32Array(uMVMatrix));
 
-            for (let i = 0; i < 2; i++) {
+            for (let i = 0; i < planets.length; i++) {
                 gl.enableVertexAttribArray(gl.getAttribLocation(shaderProgram, "aVertexPosition"));  //Przekazanie położenia
                 gl.bindBuffer(gl.ARRAY_BUFFER, planets[i].PositionBuffer());
                 gl.vertexAttribPointer(gl.getAttribLocation(shaderProgram, "aVertexPosition"), planets[i].PositionBuffer().itemSize, gl.FLOAT, false, 0, 0);

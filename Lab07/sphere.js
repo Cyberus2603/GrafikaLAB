@@ -1,7 +1,7 @@
 
 class Sphere {
     constructor(radius,texture,texture_vertecies,
-                pos_x = 0,pos_y = 0,pos_z = 0,
+                pos_x = 0,pos_z = 0,pos_y = 0,
                 negate_normals = false, step_elevation = 90/30,step_angle = 360/60) {
         this.radius = radius;
         this.texture = texture;
@@ -110,11 +110,7 @@ class Sphere {
                 py4 /= this.negate_normals*p4
                 pz4 /= this.negate_normals*p4
 
-                normals.push(...createRect2(
-                    px1 + this.pos_x,py1 + this.pos_y,pz1 + this.pos_z,
-                    px2 + this.pos_x,py2 + this.pos_y,pz2 + this.pos_z,
-                    px3 + this.pos_x,py3 + this.pos_y,pz3 + this.pos_z,
-                    px4 + this.pos_x,py4 + this.pos_y,pz4 + this.pos_z));
+                normals.push(...createRect2(px1,py1,pz1,px2,py2,pz2,px3,py3,pz3,px4,py4,pz4));
             }
         }
         return normals;
