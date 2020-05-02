@@ -2,7 +2,7 @@
 class Sphere {
     constructor(radius,texture,texture_vertecies,
                 pos_x = 0,pos_z = 0,pos_y = 0,
-                negate_normals = false, step_elevation = 90/30,step_angle = 360/60) {
+                negate_normals = false, step_elevation = 90/30,step_angle = 360/18) {
         this.radius = radius;
         this.texture = texture;
         this.texture_vertecies = texture_vertecies;
