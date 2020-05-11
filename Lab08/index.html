@@ -8,33 +8,28 @@
         let shaderProgram;
         let uPMatrix;
         let texture_buffers = [];
-
-        let sun = new Sphere(20.0,"Sun.png",sphere_texture_vertecies,0,0,0,true);
-        let mercury = new Sphere(0.5,"Mercury.png",sphere_texture_vertecies,45);
-        let venus = new Sphere(0.75,"Venus.png",sphere_texture_vertecies,-55);
-        let earth = new Sphere(1.0,"Earth.png",sphere_texture_vertecies,0,78);
-        let mars = new Sphere(1.0,"Mars.png",sphere_texture_vertecies,0,-100);
-        let jupiter = new Sphere(5.0,"Jupiter.png",sphere_texture_vertecies,140,-150);
-        let saturn = new Sphere(3.0,"Saturn.png",sphere_texture_vertecies,-200,105);
-        let uranus = new Sphere(3.0,"Uranus.png",sphere_texture_vertecies,220,340);
-        let neptune = new Sphere(4.0,"Neptune.png",sphere_texture_vertecies,0,-430);
-        let moon = new Sphere(0.1,"Moon.png",sphere_texture_vertecies,0,81);
-        let phobos = new Sphere(0.1,"Phobos.png",sphere_texture_vertecies,3.5,-104);
-        let deimos = new Sphere(0.1,"Deimos.png",sphere_texture_vertecies,0,-97);
-
         let planets = [];
-        planets.push(sun);
-        planets.push(mercury);
-        planets.push(venus);
-        planets.push(earth);
-        planets.push(mars);
-        planets.push(jupiter);
-        planets.push(saturn);
-        planets.push(uranus);
-        planets.push(neptune);
-        planets.push(moon);
-        planets.push(phobos);
-        planets.push(deimos);
+
+        let CameraAngleZ = 0.0;
+        let CameraAngleY = 180.0;
+        let CameraAngleX = 0.0;
+        let TranslateX = 0.0;
+        let TranslateY = 0.0;
+        let TranslateZ = 40.0;
+        let MovementSpeedMultiplier = 1;
+        let CameraAngleSpeedMultiplier = 0.5;
+        let LightSpeedMultiplier = 0.25;
+
+        let lightX = 0;
+        let lightY = 0;
+        let lightZ = 0;
+
+        let orbit_degree = 0;
+        let orbit_step = 0.1;
+        let init_phase = [];
+        let rotation_angle = [];
+        let rotation_angle_step = [];
+
 
         function MatrixMul(a,b) { //Mnożenie macierzy
             c = [
@@ -59,17 +54,6 @@
                 p1x,p1y,p1z, p2x,p2y,p2z, p4x,p4y,p4z,      //Pierwszy trójkąt
                 p1x,p1y,p1z, p4x,p4y,p4z, p3x,p3y,p3z ];    //Drugi trójkąt
             return vertexPosition;
-        }
-
-        function createRectCoords(mu,mv,dau,dav,dbu,dbv) {
-            p1u = mu;             p1v = mv;
-            p2u = mu + dau;       p2v = mv + dav;
-            p3u = mu + dbu;       p3v = mv + dbv;
-            p4u = mu + dau + dbu; p4v = mv + dav + dbv;
-            let vertexCoord = [
-                p1u,p1v, p2u,p2v, p4u,p4v,      //Pierwszy trójkąt
-                p1u,p1v, p4u,p4v, p3u,p3v ];    //Drugi trójkąt
-            return vertexCoord;
         }
 
         function createRectColor(r,g,b) {
@@ -144,6 +128,32 @@
             gl.linkProgram(shaderProgram);
             if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) alert("Could not initialise shaders");  //Sprawdzenie ewentualnych błedów
 
+            let sun = new Sphere(10.0,0,"Sun.png",sphere_texture_vertecies,0,0,0,true);
+            let mercury = new Sphere(0.5,45,"Mercury.png",sphere_texture_vertecies,45);
+            let venus = new Sphere(0.75,55,"Venus.png",sphere_texture_vertecies,55);
+            let earth = new Sphere(1.0,78,"Earth.png",sphere_texture_vertecies,78);
+            let mars = new Sphere(1.0,100,"Mars.png",sphere_texture_vertecies,100);
+            let jupiter = new Sphere(5.0,150,"Jupiter.png",sphere_texture_vertecies,150);
+            let saturn = new Sphere(3.0,200,"Saturn.png",sphere_texture_vertecies,200);
+            let uranus = new Sphere(3.0,340,"Uranus.png",sphere_texture_vertecies,340);
+            let neptune = new Sphere(4.0,430,"Neptune.png",sphere_texture_vertecies,430);
+            let moon = new Sphere(0.1,3,"Moon.png",sphere_texture_vertecies,81);
+            let phobos = new Sphere(0.1,4,"Phobos.png",sphere_texture_vertecies,104);
+            let deimos = new Sphere(0.1,6,"Deimos.png",sphere_texture_vertecies,106);
+
+            planets.push(sun);
+            planets.push(mercury);
+            planets.push(venus);
+            planets.push(earth);
+            planets.push(mars);
+            planets.push(jupiter);
+            planets.push(saturn);
+            planets.push(uranus);
+            planets.push(neptune);
+            planets.push(moon);
+            planets.push(phobos);
+            planets.push(deimos);
+
             texture_buffers.push(sun.TextureFileBuffer());
             texture_buffers.push(mercury.TextureFileBuffer());
             texture_buffers.push(venus.TextureFileBuffer());
@@ -169,21 +179,17 @@
                 0                         ,0                           ,-(2*zFar*zNear)/(zFar-zNear) ,0.0,
             ];
 
+            for (let i = 0; i < planets.length; i++) {
+                init_phase[i] = (24 * i) % 360;
+                rotation_angle[i] = 0;
+            }
+
+            for (let i = 1.0; i < planets.length; i += 1.0) {
+                rotation_angle_step[i] = 5.0/i;
+            }
+
             Tick();
         }
-        let CameraAngleZ = 0.0;
-        let CameraAngleY = 180.0;
-        let CameraAngleX = 0.0;
-        let TranslateX = 0.0;
-        let TranslateY = 0.0;
-        let TranslateZ = 40.0;
-        let MovementSpeedMultiplier = 1;
-        let CameraAngleSpeedMultiplier = 0.5;
-        let LightSpeedMultiplier = 0.25;
-
-        let lightX = 0;
-        let lightY = 0;
-        let lightZ = 0;
 
         let uMVMatrix = [
             1,0,0,0, //Macierz jednostkowa
@@ -192,7 +198,46 @@
             0,0,10,1
         ];
 
-        function CalculateCameraPosition() {
+        function CalculateOrbitPosition() {
+            for (let i = 0; i < planets.length - 3; i++) {
+                planets[i].changePosition(
+                    planets[i].orbitRadius() * Math.sin((orbit_degree + init_phase[i]) * Math.PI / 180.0),
+                    planets[i].orbitRadius() * Math.cos((orbit_degree + init_phase[i]) * Math.PI / 180.0));
+            }
+            planets[9].changePosition(
+                planets[9].orbitRadius() * Math.sin((orbit_degree + init_phase[9]) * Math.PI / 180.0),
+                planets[9].orbitRadius() * Math.cos((orbit_degree + init_phase[9]) * Math.PI / 180.0),
+                planets[3].getPosX(),planets[3].getPosZ());
+            planets[10].changePosition(
+                planets[10].orbitRadius() * Math.sin((orbit_degree + init_phase[10]) * Math.PI / 180.0),
+                planets[10].orbitRadius() * Math.cos((orbit_degree + init_phase[10]) * Math.PI / 180.0),
+                planets[4].getPosX(),planets[4].getPosZ());
+            planets[11].changePosition(
+                planets[11].orbitRadius() * Math.sin((orbit_degree + init_phase[11]) * Math.PI / 180.0),
+                planets[11].orbitRadius() * Math.cos((orbit_degree + init_phase[11]) * Math.PI / 180.0),
+                planets[4].getPosX(),planets[4].getPosZ());
+
+            orbit_degree = (orbit_degree + orbit_step) % 360;
+
+            console.log("Orbital: " + orbit_degree);
+            console.log("sin: " + Math.sin(orbit_degree * Math.PI / 180.0));
+            console.log("cos: " + Math.cos(orbit_degree * Math.PI / 180.0));
+            console.log("Sun x: " + planets[0].pos_x);
+            console.log("Sun z: " + planets[0].pos_z);
+            console.log("Earth x: " + planets[1].pos_x);
+            console.log("Earth z: " + planets[1].pos_z);
+            console.log("Moon x: " + planets[9].pos_x);
+            console.log("Moon z: " + planets[9].pos_z);
+        }
+
+        function CalculateRotationAngle() {
+            for (let i = 0; i < planets.length; i++) {
+                planets[i].setRotationAngle(rotation_angle[i])
+                rotation_angle[i] = (rotation_angle[i] + rotation_angle_step[i]) % 360;
+            }
+        }
+
+        function CalculatePosition(pos_x,pos_z) {
             let uMVMatrix = [
                 1,0,0,0, //Macierz jednostkowa
                 0,1,0,0,
@@ -242,9 +287,17 @@
                 0,0,TranslateZ,1
             ];
 
+            let uMVObject = [
+                1,0,0,0,
+                0,1,0,0,
+                0,0,1,0,
+                pos_x,0,pos_z,1
+            ];
+
             uMVMatrix = MatrixMul(uMVMatrix,uMVTranslateX);
             uMVMatrix = MatrixMul(uMVMatrix,uMVTranslateY);
             uMVMatrix = MatrixMul(uMVMatrix,uMVTranslateZ);
+            uMVMatrix = MatrixMul(uMVMatrix,uMVObject);
             uMVMatrix = MatrixMul(uMVMatrix,uMVRotX);
             uMVMatrix = MatrixMul(uMVMatrix,uMVRotY);
             uMVMatrix = MatrixMul(uMVMatrix,uMVRotZ);
@@ -254,7 +307,7 @@
 
         function Tick() {
 
-            let uMVMatrix = CalculateCameraPosition();
+            let uMVMatrix = [];
 
             //Render Scene
             gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
@@ -267,9 +320,11 @@
             gl.depthFunc(gl.LEQUAL);            //
 
             gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, "uPMatrix"), false, new Float32Array(uPMatrix)); //Wgranie macierzy kamery do pamięci karty graficznej
-            gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, "uMVMatrix"), false, new Float32Array(uMVMatrix));
 
             for (let i = 0; i < planets.length; i++) {
+                uMVMatrix = CalculatePosition(planets[i].getPosX(),planets[i].getPosZ());
+
+                gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, "uMVMatrix"), false, new Float32Array(uMVMatrix));
                 gl.enableVertexAttribArray(gl.getAttribLocation(shaderProgram, "aVertexPosition"));  //Przekazanie położenia
                 gl.bindBuffer(gl.ARRAY_BUFFER, planets[i].PositionBuffer());
                 gl.vertexAttribPointer(gl.getAttribLocation(shaderProgram, "aVertexPosition"), planets[i].PositionBuffer().itemSize, gl.FLOAT, false, 0, 0);
@@ -295,6 +350,7 @@
                 gl.drawArrays(gl.TRIANGLES, 0, planets[i].PositionBuffer().numItems*planets[i].PositionBuffer().itemSize); //Faktyczne wywołanie rendrowania
             }
 
+            CalculateOrbitPosition();
 
             // console.log("X: " + TranslateX + "\n");
             // console.log("Y: " + TranslateY + "\n");
